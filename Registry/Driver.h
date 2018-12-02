@@ -7,7 +7,7 @@
 #include <initguid.h>
 
 #include "device.h"
-#include "trace.h"
+#include "Trace.h"
 
 EXTERN_C_START
 

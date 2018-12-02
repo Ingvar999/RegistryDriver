@@ -1,6 +1,5 @@
 #include "driver.h"
 #include "driver.tmh"
-#include "Registry.h"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (INIT, DriverEntry)
@@ -15,8 +14,6 @@ NTSTATUS DriverEntry( _In_ PDRIVER_OBJECT  DriverObject, _In_ PUNICODE_STRING Re
     NTSTATUS status;
     WDF_OBJECT_ATTRIBUTES attributes;
 
-    WPP_INIT_TRACING( DriverObject, RegistryPath );
-
     WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
     attributes.EvtCleanupCallback = RegistryEvtDriverContextCleanup;
 
@@ -25,7 +22,6 @@ NTSTATUS DriverEntry( _In_ PDRIVER_OBJECT  DriverObject, _In_ PUNICODE_STRING Re
     status = WdfDriverCreate(DriverObject, RegistryPath, &attributes, &config, WDF_NO_HANDLE);
 
     if (!NT_SUCCESS(status)) {
-        WPP_CLEANUP(DriverObject);
         return status;
     }
 
@@ -38,19 +34,11 @@ NTSTATUS RegistryEvtDeviceAdd(_In_  WDFDRIVER  Driver,_Inout_ PWDFDEVICE_INIT De
     UNREFERENCED_PARAMETER(Driver);
 	PAGED_CODE();
     status = RegistryCreateDevice(DeviceInit);
-
-	if (NT_SUCCESS(status)) {
-		status = WorkWithRegistry();
-	}
-
     return status;
 }
 
 VOID RegistryEvtDriverContextCleanup(_In_ WDFOBJECT DriverObject)
 {
     UNREFERENCED_PARAMETER(DriverObject);
-
     PAGED_CODE ();
-
-    WPP_CLEANUP( WdfDriverWdmGetDriverObject( (WDFDRIVER) DriverObject) );
 }
