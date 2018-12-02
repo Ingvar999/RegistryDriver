@@ -19,17 +19,13 @@ Registry_Device_CoInstaller_CopyFiles = 11
 
 [SourceDisksFiles]
 Registry.sys  = 1,,
-WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 ; make sure the number matches with SourceDisksNames
-
-;*****************************************
-; Install Section
-;*****************************************
+WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1 
 
 [Manufacturer]
 %ManufacturerName%=Standard,NT$ARCH$
 
 [Standard.NT$ARCH$]
-%Registry.DeviceDesc%=Registry_Device, USB\VID_vvvv&PID_pppp
+%Registry.DeviceDesc%=Registry_Device, USB\VID_0930&PID_6545
 
 [Registry_Device.NT]
 CopyFiles=Drivers_Dir
