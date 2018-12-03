@@ -25,7 +25,7 @@ WdfCoInstaller$KMDFCOINSTALLERVERSION$.dll=1
 %ManufacturerName%=Standard,NT$ARCH$
 
 [Standard.NT$ARCH$]
-%Registry.DeviceDesc%=Registry_Device, USB\VID_0930&PID_6545
+%Registry.DeviceDesc%=Registry_Device, USB\VID_058F&PID_6387
 
 [Registry_Device.NT]
 CopyFiles=Drivers_Dir

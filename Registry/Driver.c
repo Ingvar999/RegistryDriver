@@ -13,7 +13,7 @@ NTSTATUS DriverEntry( _In_ PDRIVER_OBJECT  DriverObject, _In_ PUNICODE_STRING Re
     WDF_DRIVER_CONFIG config;
     NTSTATUS status;
     WDF_OBJECT_ATTRIBUTES attributes;
-
+	DbgPrint("Hello!");
     WDF_OBJECT_ATTRIBUTES_INIT(&attributes);
     attributes.EvtCleanupCallback = RegistryEvtDriverContextCleanup;
 

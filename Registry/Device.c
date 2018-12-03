@@ -1,6 +1,7 @@
 #include "driver.h"
 #include "device.tmh"
 #include "Registry.h"
+#include "public.h"
 
 #ifdef ALLOC_PRAGMA
 #pragma alloc_text (PAGE, RegistryCreateDevice)

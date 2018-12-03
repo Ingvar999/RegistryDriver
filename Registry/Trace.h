@@ -1,3 +1,4 @@
+#pragma once
 //ead48254-b3fd-49ff-b42f-3cc329b161df
 #define WPP_CONTROL_GUIDS                                              \
     WPP_DEFINE_CONTROL_GUID(                                           \

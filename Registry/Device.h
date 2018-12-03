@@ -1,11 +1,12 @@
-
-#include "public.h"
+#pragma once
 
 EXTERN_C_START
 
 typedef struct _DEVICE_CONTEXT
 {
     WDFUSBDEVICE UsbDevice;
+	LARGE_INTEGER CallbackID;
+	HANDLE FileHandle;
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
