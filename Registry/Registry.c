@@ -1,8 +1,8 @@
+#include <stdio.h>
+
 #include "Registry.h"
 #include "Driver.h"
 #include "Device.h"
-#include <stdio.h>
-
 
 NTSTATUS WorkWithRegistry(IN WDFDEVICE device) {
 	NTSTATUS status;
@@ -45,21 +45,20 @@ NTSTATUS ChangeRegistryCallback(PVOID CallbackContext, PVOID Argument1, PVOID Ar
 	PDEVICE_CONTEXT context;
 	IO_STATUS_BLOCK statusBlock;
 	SIZE_T bufSize;
-	CHAR message[200];
-	time_t ttime;
+	WCHAR message[200];
+	TIME ttime;
 	PREG_CREATE_KEY_INFORMATION infoCreateKey;
 	
 
 	context = (PDEVICE_CONTEXT)CallbackContext;
 	switch ((REG_NOTIFY_CLASS)Argument1) {
-	case RegNtPreCreateKeyEx: case RegNtPreCreateKey:{
+	case RegNtPreCreateKeyEx:{
 
 		infoCreateKey = (PREG_CREATE_KEY_INFORMATION)Argument2;
-		//ttime = time(NULL);
-		//gettime
-		bufSize = sprintf(message, "%s Create Key\r", ctime(&ttime));
+		KeQuerySystemTime(&ttime);
+		bufSize = swprintf(message, L"[%d Create Key] %s\r", ttime, infoCreateKey->CompleteName->Buffer);
 		if (bufSize != -1) {
-			status = ZwWriteFile(context->FileHandle, NULL, NULL, NULL, &statusBlock, message, bufSize, NULL, NULL);
+			status = ZwWriteFile(context->FileHandle, NULL, NULL, NULL, &statusBlock, message, bufSize * sizeof(WCHAR), NULL, NULL);
 		}
 
 	} break;
