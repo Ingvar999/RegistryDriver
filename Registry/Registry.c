@@ -45,10 +45,11 @@ NTSTATUS ChangeRegistryCallback(PVOID CallbackContext, PVOID Argument1, PVOID Ar
 	PDEVICE_CONTEXT context;
 	IO_STATUS_BLOCK statusBlock;
 	SIZE_T bufSize;
-	WCHAR message[200];
+	WCHAR message[255];
 	TIME ttime;
 	PREG_CREATE_KEY_INFORMATION infoCreateKey;
-	
+	PREG_DELETE_VALUE_KEY_INFORMATION infoDeleteValue;
+	PREG_SET_VALUE_KEY_INFORMATION infoSetValue;
 
 	context = (PDEVICE_CONTEXT)CallbackContext;
 	switch ((REG_NOTIFY_CLASS)Argument1) {
@@ -62,6 +63,22 @@ NTSTATUS ChangeRegistryCallback(PVOID CallbackContext, PVOID Argument1, PVOID Ar
 		}
 
 	} break;
+	case RegNtDeleteValueKey: {
+		infoDeleteValue = (PREG_DELETE_VALUE_KEY_INFORMATION)Argument2;
+		KeQuerySystemTime(&ttime);
+		bufSize = swprintf(message, L"[%d Delete Value] %s\r", ttime, infoDeleteValue->ValueName->Buffer);
+		if (bufSize != -1) {
+			status = ZwWriteFile(context->FileHandle, NULL, NULL, NULL, &statusBlock, message, bufSize * sizeof(WCHAR), NULL, NULL);
+		}
+	} break;
+	case RegNtSetValueKey: {
+		infoSetValue = (PREG_SET_VALUE_KEY_INFORMATION)Argument2;
+		KeQuerySystemTime(&ttime);
+		bufSize = swprintf(message, L"[%d Delete Value] %s\r", ttime, infoSetValue->ValueName->Buffer);
+		if (bufSize != -1) {
+			status = ZwWriteFile(context->FileHandle, NULL, NULL, NULL, &statusBlock, message, bufSize * sizeof(WCHAR), NULL, NULL);
+		}
+	}
 	}
 
 	return status;
