@@ -44,41 +44,47 @@ NTSTATUS ChangeRegistryCallback(PVOID CallbackContext, PVOID Argument1, PVOID Ar
 	NTSTATUS status = STATUS_SUCCESS;
 	PDEVICE_CONTEXT context;
 	IO_STATUS_BLOCK statusBlock;
-	SIZE_T bufSize;
+	SIZE_T bufSize = -1;
 	WCHAR message[255];
-	TIME ttime;
+	TIME systemTime, localTime;
+	unsigned int microseconds, miliseconds, seconds, minutes, hours;
+
 	PREG_CREATE_KEY_INFORMATION infoCreateKey;
 	PREG_DELETE_VALUE_KEY_INFORMATION infoDeleteValue;
 	PREG_SET_VALUE_KEY_INFORMATION infoSetValue;
 
 	context = (PDEVICE_CONTEXT)CallbackContext;
+	KeQuerySystemTimePrecise(&systemTime);
+	ExSystemTimeToLocalTime(&systemTime, &localTime);
+	microseconds = (localTime.LowPart % 10000) / 10;
+	miliseconds = (localTime.LowPart % 10000000) / 10000;
+	seconds = (localTime.QuadPart % 600000000) / 10000000;
+	minutes = (localTime.QuadPart % 36000000000) / 600000000;
+	hours = (localTime.QuadPart % 864000000000)  / 36000000000;
+
 	switch ((REG_NOTIFY_CLASS)Argument1) {
+
 	case RegNtPreCreateKeyEx:{
-
 		infoCreateKey = (PREG_CREATE_KEY_INFORMATION)Argument2;
-		KeQuerySystemTime(&ttime);
-		bufSize = swprintf(message, L"[%d Create Key] %s\r", ttime, infoCreateKey->CompleteName->Buffer);
-		if (bufSize != -1) {
-			status = ZwWriteFile(context->FileHandle, NULL, NULL, NULL, &statusBlock, message, bufSize * sizeof(WCHAR), NULL, NULL);
-		}
-
+		bufSize = swprintf(message, L"[%d:%d:%d:%d:%d Create Key] %s\r", 
+			hours, minutes, seconds, miliseconds, microseconds, infoCreateKey->CompleteName->Buffer);
 	} break;
+
 	case RegNtDeleteValueKey: {
 		infoDeleteValue = (PREG_DELETE_VALUE_KEY_INFORMATION)Argument2;
-		KeQuerySystemTime(&ttime);
-		bufSize = swprintf(message, L"[%d Delete Value] %s\r", ttime, infoDeleteValue->ValueName->Buffer);
-		if (bufSize != -1) {
-			status = ZwWriteFile(context->FileHandle, NULL, NULL, NULL, &statusBlock, message, bufSize * sizeof(WCHAR), NULL, NULL);
-		}
+		bufSize = swprintf(message, L"[%d:%d:%d:%d:%d Delete Value] %s\r",
+			hours, minutes, seconds, miliseconds, microseconds, infoDeleteValue->ValueName->Buffer);
 	} break;
+
 	case RegNtSetValueKey: {
 		infoSetValue = (PREG_SET_VALUE_KEY_INFORMATION)Argument2;
-		KeQuerySystemTime(&ttime);
-		bufSize = swprintf(message, L"[%d Delete Value] %s\r", ttime, infoSetValue->ValueName->Buffer);
-		if (bufSize != -1) {
-			status = ZwWriteFile(context->FileHandle, NULL, NULL, NULL, &statusBlock, message, bufSize * sizeof(WCHAR), NULL, NULL);
-		}
+		bufSize = swprintf(message, L"[%d:%d:%d:%d:%d Set Value] %s\r",
+			hours, minutes, seconds, miliseconds, microseconds, infoSetValue->ValueName->Buffer);
+	} break;
 	}
+
+	if (bufSize != -1) {
+		status = ZwWriteFile(context->FileHandle, NULL, NULL, NULL, &statusBlock, message, bufSize * sizeof(WCHAR), NULL, NULL);
 	}
 
 	return status;
