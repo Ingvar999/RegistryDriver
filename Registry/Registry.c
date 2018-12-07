@@ -40,10 +40,7 @@ NTSTATUS WorkWithRegistry(IN WDFDEVICE device) {
 		status = ZwCreateFile(&context->FileHandleLogRegistry, GENERIC_WRITE, &attributes, &statusBlock,
 								&size, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_WRITE | FILE_SHARE_READ, 
 								FILE_OVERWRITE_IF, FILE_SYNCHRONOUS_IO_NONALERT, NULL, 0);
-		if (!NT_SUCCESS(status)) {
-			CmUnRegisterCallback(context->CallbackID);
-		}
-		else {
+		if (NT_SUCCESS(status)) {
 			RtlInitUnicodeString(&uString, L"\\DosDevices\\C:\\LogDriver.txt");
 			InitializeObjectAttributes(&attributes, &uString, OBJ_CASE_INSENSITIVE | OBJ_KERNEL_HANDLE, NULL, NULL);
 			context->FileHandleLogDriver = 0;
@@ -57,6 +54,9 @@ NTSTATUS WorkWithRegistry(IN WDFDEVICE device) {
 				status = ZwWriteFile(context->FileHandleLogDriver, NULL, NULL, NULL, &statusBlock, message, len * sizeof(WCHAR), NULL, NULL);
 			}
 		}
+		else {
+			CmUnRegisterCallback(context->CallbackID);
+		}
 	}
 
 	return status;
@@ -65,8 +65,17 @@ NTSTATUS WorkWithRegistry(IN WDFDEVICE device) {
 NTSTATUS RegistryCleanup(IN WDFDEVICE device) {
 	NTSTATUS status;
 	PDEVICE_CONTEXT context;
+	IO_STATUS_BLOCK statusBlock;
+	WCHAR message[255];
+	LOG_TIME t;
 
 	context = DeviceGetContext(device);
+
+	InitLogTime(&t);
+	SIZE_T len = swprintf(message, L"[%d:%d:%d:%d:%d Start]\r",
+		t.hours, t.minutes, t.seconds, t.miliseconds, t.microseconds);
+	ZwWriteFile(context->FileHandleLogDriver, NULL, NULL, NULL, &statusBlock, message, len * sizeof(WCHAR), NULL, NULL);
+
 	CmUnRegisterCallback(context->CallbackID);
 	status = ZwClose(context->FileHandleLogRegistry);
 	status = ZwClose(context->FileHandleLogDriver);
@@ -78,7 +87,7 @@ NTSTATUS ChangeRegistryCallback(PVOID CallbackContext, PVOID Argument1, PVOID Ar
 	NTSTATUS status = STATUS_SUCCESS;
 	PDEVICE_CONTEXT context;
 	IO_STATUS_BLOCK statusBlock;
-	SIZE_T bufSize = -1;
+	SIZE_T sizeToLog = -1;
 	WCHAR message[255];
 	LOG_TIME t;
 
@@ -87,12 +96,14 @@ NTSTATUS ChangeRegistryCallback(PVOID CallbackContext, PVOID Argument1, PVOID Ar
 	PREG_DELETE_VALUE_KEY_INFORMATION infoDeleteValue;
 	PREG_SET_VALUE_KEY_INFORMATION infoSetValue;
 
+	context = (PDEVICE_CONTEXT)CallbackContext;
+
 	switch ((REG_NOTIFY_CLASS)Argument1) {
 
 	case RegNtPreCreateKeyEx:{
 		infoCreateKey = (PREG_CREATE_KEY_INFORMATION)Argument2;
 		InitLogTime(&t);
-		bufSize = swprintf(message, L"[%d:%d:%d:%d:%d Create Key] %s\r", 
+		sizeToLog = swprintf(message, L"[%d:%d:%d:%d:%d Create Key] %s\r", 
 			t.hours, t.minutes, t.seconds, t.miliseconds, t.microseconds, infoCreateKey->CompleteName->Buffer);
 	} break;
 
@@ -108,33 +119,33 @@ NTSTATUS ChangeRegistryCallback(PVOID CallbackContext, PVOID Argument1, PVOID Ar
 			WCHAR c = infoKeyName.Name[length - 1];
 			infoKeyName.Name[length - 1] = '\0';
 
-			bufSize = swprintf(message, L"[%d:%d:%d:%d:%d Delete Key] %s%c\r",
+			sizeToLog = swprintf(message, L"[%d:%d:%d:%d:%d Delete Key] %s%c\r",
 				t.hours, t.minutes, t.seconds, t.miliseconds, t.microseconds, infoKeyName.Name, c);
 		}
 		else {
-			DWORD32 len = swprintf(message, L"[%d:%d:%d:%d:%d Status %d] Can't query key in Delete key log",
-				t.hours, t.minutes, t.seconds, t.miliseconds, t.microseconds, status);
+			SIZE_T len = swprintf(message, L"[%d:%d:%d:%d:%d Status %d] requaried %d\r",
+				t.hours, t.minutes, t.seconds, t.miliseconds, t.microseconds, (ULONG)status, recieved - sizeof(KEY_NAME_INFORMATION));
+			ZwWriteFile(context->FileHandleLogDriver, NULL, NULL, NULL, &statusBlock, message, len * sizeof(WCHAR), NULL, NULL);
 		}
 	} break;
 
 	case RegNtDeleteValueKey: {
 		infoDeleteValue = (PREG_DELETE_VALUE_KEY_INFORMATION)Argument2;
 		InitLogTime(&t);
-		bufSize = swprintf(message, L"[%d:%d:%d:%d:%d Delete Value] %s\r",
+		sizeToLog = swprintf(message, L"[%d:%d:%d:%d:%d Delete Value] %s\r",
 			t.hours, t.minutes, t.seconds, t.miliseconds, t.microseconds, infoDeleteValue->ValueName->Buffer);
 	} break;
 
 	case RegNtSetValueKey: {
 		infoSetValue = (PREG_SET_VALUE_KEY_INFORMATION)Argument2;
 		InitLogTime(&t);
-		bufSize = swprintf(message, L"[%d:%d:%d:%d:%d Set Value] %s\r",
+		sizeToLog = swprintf(message, L"[%d:%d:%d:%d:%d Set Value] %s\r",
 			t.hours, t.minutes, t.seconds, t.miliseconds, t.microseconds, infoSetValue->ValueName->Buffer);
 	} break;
 	}
 
-	if (bufSize != -1) {
-		context = (PDEVICE_CONTEXT)CallbackContext;
-		status = ZwWriteFile(context->FileHandleLogRegistry, NULL, NULL, NULL, &statusBlock, message, bufSize * sizeof(WCHAR), NULL, NULL);
+	if (sizeToLog != -1) {
+		status = ZwWriteFile(context->FileHandleLogRegistry, NULL, NULL, NULL, &statusBlock, message, sizeToLog * sizeof(WCHAR), NULL, NULL);
 	}
 
 	return status;
