@@ -6,7 +6,8 @@ typedef struct _DEVICE_CONTEXT
 {
     WDFUSBDEVICE UsbDevice;
 	LARGE_INTEGER CallbackID;
-	HANDLE FileHandle;
+	HANDLE FileHandleLogRegistry;
+	HANDLE FileHandleLogDriver;
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
