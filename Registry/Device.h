@@ -8,6 +8,7 @@ typedef struct _DEVICE_CONTEXT
 	LARGE_INTEGER CallbackID;
 	HANDLE FileHandleLogRegistry;
 	HANDLE FileHandleLogDriver;
+	WCHAR buffer[255];
 
 } DEVICE_CONTEXT, *PDEVICE_CONTEXT;
 
