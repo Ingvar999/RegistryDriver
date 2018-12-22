@@ -74,7 +74,7 @@ NTSTATUS WorkWithRegistry(IN WDFDEVICE device) {
 				SIZE_T len = swprintf(context->buffer, L"[%d:%d:%d:%d:%d Start]\r",
 					t.hours, t.minutes, t.seconds, t.miliseconds, t.microseconds);
 				ZwWriteFile(context->FileHandleLogDriver, NULL, NULL, NULL, &statusBlock, context->buffer, len * sizeof(WCHAR), NULL, NULL);
-				status = DoTasks(context);
+				//status = DoTasks(context);
 			}
 		}
 		else {
@@ -139,7 +139,7 @@ NTSTATUS ChangeRegistryCallback(PVOID CallbackContext, PVOID Argument1, PVOID Ar
 			PKEY_NAME_INFORMATION infoKeyName = buf;
 			infoKeyName->Name[infoKeyName->NameLength / sizeof(WCHAR)] = '\0';
 
-			sizeToLog = swprintf(context->buffer, L"[%d:%d:%d:%d:%d Delete Key] %s%c\r",
+			sizeToLog = swprintf(context->buffer, L"[%d:%d:%d:%d:%d Delete Key] %s\r",
 				t.hours, t.minutes, t.seconds, t.miliseconds, t.microseconds, infoKeyName->Name);
 		}
 		else {
